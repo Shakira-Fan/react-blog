@@ -1,18 +1,19 @@
-import { useEffect, useState } from "react"
+import { useEffect} from "react";
+import { useStoreActions, useStoreState } from "easy-peasy";
 import { useParams, Link } from "react-router-dom"
-import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DataContext from './context/DataContext';
 import { format } from 'date-fns';
-import api from './api/posts'
 
 export const EditPost = () => {
-    const [editTitle, setEditTitle] = useState('');
-    const [editBody, setEditBody] = useState('');
-    const { posts, setPosts } = useContext(DataContext);
-
     const { id } = useParams();
-    const post = posts.find(post => (post.id).toString() === id);
+    const editTitle = useStoreState(state=>state.editTitle);
+    const setEditTitle = useStoreActions(actions=>actions.setEditTitle);
+    const editBody= useStoreState(state=>state.editBody);
+    const setEditBody = useStoreActions(actions=>actions.setEditBody);
+    const getPostById = useStoreState(state=>state.getPostById);
+    const post = getPostById(id);
+    const editPost = useStoreActions(actions=>actions.editPost);
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -22,18 +23,11 @@ export const EditPost = () => {
         }
     }, [post, setEditTitle, setEditBody])
 
-    const handleEdit = async (id) => {
+    const handleEdit = (id) => {
         const datetime = format(new Date(), 'MMMM dd, yyyy pp');
         const updatePost = { id, title: editTitle, datetime, body: editBody };
-        try {
-            const response = await api.put(`/posts/${id}`, updatePost);
-            setPosts(posts.map(post => post.id === id ? { ...response.data } : post));
-            setEditTitle('');
-            setEditBody('');
-            navigate('/');
-        } catch (error) {
-            console.log(`Error:${error.message}`)
-        }
+        editPost(updatePost);
+        navigate('/')
     }
 
     return (
@@ -57,7 +51,7 @@ export const EditPost = () => {
                         onChange={(e) => setEditBody(e.target.value)}
                     />
                     <button
-                        type="submit"
+                        type="button"
                         onClick={() => handleEdit(post.id)}
                     >
                         Submit
